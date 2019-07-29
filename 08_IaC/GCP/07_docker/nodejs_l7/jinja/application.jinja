@@ -1,0 +1,96 @@
+{#
+Copyright 2016 Google Inc. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+#}
+
+{% set BACKEND = env["deployment"] + "-backend" %}
+{% set FRONTEND = env["deployment"] + "-frontend" %}
+{% set STATIC_SERVICE = env["deployment"] + "-static-service" %}
+{% set APPLICATION = env["deployment"] + "-application" %}
+
+{% set APPLICATION_PORT = 8080 %}
+{% set LB_PORT = 8080 %}
+{% set MYSQL_PORT = 8080 %}
+
+{% set CONTAINER_IMAGE = "family/cos-stable" %}
+
+resources:
+- name: {{ BACKEND }}
+  type: container_vm.jinja
+  properties:
+    zone: {{ properties["primaryZone"] }}
+    dockerImage: {{ properties["backendImage"] }}
+    containerImage: {{ CONTAINER_IMAGE }}
+    port: {{ MYSQL_PORT }}
+
+- name: {{ FRONTEND }}
+  type: service.jinja
+  properties:
+    primaryZone: {{ properties["primaryZone"] }}
+    primarySize: 2
+    secondaryZone: {{ properties["secondaryZone"] }}
+    secondarySize: 0
+    dockerImage: {{ properties["frontendImage"] }}
+    containerImage: {{ CONTAINER_IMAGE }}
+    port: {{ APPLICATION_PORT }}
+    service: http
+    # If left out will default to 1
+    maxSize: 20
+
+    # Define the variables that are exposed to container as env variables.
+    dockerEnv:
+      SEVEN_SERVICE_MYSQL_PORT: {{ MYSQL_PORT }}
+      SEVEN_SERVICE_PROXY_HOST: $(ref.{{ BACKEND }}.networkInterfaces[0].networkIP)
+
+- name: {{ STATIC_SERVICE }}
+  type: service.jinja
+  properties:
+    primaryZone: {{ properties["primaryZone"] }}
+    primarySize: 2
+    secondaryZone: {{ properties["secondaryZone"] }}
+    secondarySize: 0
+    dockerImage: {{ properties["staticImage"] }}
+    containerImage: {{ CONTAINER_IMAGE }}
+    port: {{ APPLICATION_PORT }}
+    service: httpstatic
+    # If left out will default to 1
+    maxSize: 20
+
+- name: {{ APPLICATION }}-urlmap
+  type: compute.v1.urlMap
+  properties:
+    defaultService: $(ref.{{ FRONTEND }}-bes.selfLink)
+    hostRules:
+      - hosts: ["*"]
+        pathMatcher: pathmap
+    pathMatchers:
+      - name: pathmap
+        defaultService: $(ref.{{ FRONTEND }}-bes.selfLink)
+        pathRules:
+          - paths: ["/static", "/static/*"]
+            service: $(ref.{{ STATIC_SERVICE }}-bes.selfLink)
+- name: {{ APPLICATION }}-targetproxy
+  type: compute.v1.targetHttpProxy
+  properties:
+    urlMap: $(ref.{{ APPLICATION }}-urlmap.selfLink)
+- name: {{ APPLICATION }}-l7lb
+  type: compute.v1.globalForwardingRule
+  properties:
+    IPProtocol: TCP
+    portRange: {{ LB_PORT }}
+    target: $(ref.{{ APPLICATION }}-targetproxy.selfLink)
+- name: {{ APPLICATION }}-fw
+  type: compute.v1.firewall
+  properties:
+    allowed:
+      - IPProtocol: TCP
+        ports: [ {{ LB_PORT }} ]
+    sourceRanges: [ 0.0.0.0/0 ]
