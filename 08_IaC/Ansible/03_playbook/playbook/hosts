@@ -1,0 +1,3 @@
+[webservers]
+aws ansible_host=<hostname>
+backend ansible_host=<hostname>

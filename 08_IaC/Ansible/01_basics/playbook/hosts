@@ -1,0 +1,3 @@
+[testservers]
+aws ansible_host=<host> ansible_user=ubuntu ansible_private_key_file=<keypair.pem or service_account.json file>
+backend ansible_host=<host> ansible_user=ubuntu ansible_private_key_file=<keypair.pem or service_account.json file>
