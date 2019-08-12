@@ -1,0 +1,14 @@
+---
+# Add host to group "launched" we can use them later
+- name: Add new instance to host group
+  add_host:
+    hostname: "{{ item.public_ip }}"
+    groupname: launched
+  with_items: "{{ instance.instances }}"
+
+- name: Wait for SSH to come up
+  delegate_to: "{{ item.public_dns_name }}"
+  wait_for_connection:
+    delay: 60
+    timeout: 180
+  with_items: "{{ instance.instances }}"

@@ -1,0 +1,5 @@
+keypair: ansible-ec2-key #Key Pair name
+instance_type: t2.micro
+security_group: launch-wizard-1 #Security group (SSH must be enabled)
+image: ami-07d0cf3af28718ef8 #OS id image
+region: us-east-1

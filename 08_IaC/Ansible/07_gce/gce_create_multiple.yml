@@ -1,0 +1,52 @@
+- name: Compute Engine Instance Examples
+  hosts: localhost
+  vars:
+    service_account_email: "{{ lookup('env', 'GCP_ACCOUNT_MAIL') }}"
+    credentials_file: "{{ lookup('env', 'GCP_ACCOUNT_FILE') }}"
+    project_id: "{{ lookup('env', 'GCP_PROJECT_ID') }}"
+  tasks:
+    - name: create multiple instances
+      # Basic provisioning example.  Create multiple Debian 8 instances in the
+      # us-central1-a Zone of n1-standard-1 machine type.
+      gce:
+        instance_names: test1,test2,test3
+        zone: us-central1-a
+        machine_type: n1-standard-1
+        image: debian-8
+        state: present
+        service_account_email: "{{ service_account_email }}"
+        credentials_file: "{{ credentials_file }}"
+        project_id: "{{ project_id }}"
+        metadata : '{ "startup-script" : "apt-get update" }'
+      register: gce
+
+    - name: Save host data
+      add_host:
+        hostname: "{{ item.public_ip }}"
+        groupname: gce_instances_ips
+      with_items: "{{ gce.instance_data }}"
+
+    - name: Wait for SSH for instances
+      wait_for:
+        delay: 1
+        host: "{{ item.public_ip }}"
+        port: 22
+        state: started
+        timeout: 30
+      with_items: "{{ gce.instance_data }}"
+
+#Install python & httpd
+    - hosts: gce_instances_ips #nombre de grupo de instancias
+      become: true
+      connection: ssh
+      remote_user: ubuntu
+      gather_facts: false
+      pre_tasks:
+        - name: 'install python'
+          raw: 'sudo yum -y install python'
+      tasks:
+      #  Instala Docker
+        - name: Instala Docker
+          yum:
+            name: docker-ce
+            state: started

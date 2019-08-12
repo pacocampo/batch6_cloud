@@ -1,0 +1,22 @@
+- name: Delete instance(s)
+  hosts: localhost
+  gather_facts: no
+  connection: local
+
+  vars: 
+    service_account_email: "{{ lookup('env', 'GCP_ACCOUNT_MAIL') }}"
+    credentials_file: "{{ lookup('env', 'GCP_ACCOUNT_FILE') }}"
+    project_id: "{{ lookup('env', 'GCP_PROJECT_ID') }}"
+
+  tasks:
+    - name: delete test-instances
+      # Basic termination of instance.
+      gce:
+        service_account_email: "{{ service_account_email }}"
+        credentials_file: "{{ credentials_file }}"
+        project_id: "{{ project_id }}"
+        instance_names: dev
+        zone: us-central1-a
+        state: deleted
+      tags:
+        - delete

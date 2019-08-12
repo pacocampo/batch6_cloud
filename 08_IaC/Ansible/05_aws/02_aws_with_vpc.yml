@@ -1,0 +1,41 @@
+- name: Create a sandbox instance
+  hosts: localhost
+  gather_facts: False
+  remote_user: ubuntu #By default ec2-user must be used to connect by SSH
+  vars:
+    keypair: ansible-ec2-key #Key Pair name
+    instance_type: t2.micro
+    security_group: launch-wizard-1 #Security group (SSH must be enabled)
+    image: ami-07d0cf3af28718ef8 #OS id image
+    region: us-east-1
+  tasks:
+    - name: Create VPC
+      ec2_vpc_net:
+        cidr_block: 10.0.0.1/24
+        name: ansible-vpc-2
+    - name: Launch instance
+      ec2:
+         key_name: "{{ keypair }}"
+         group: "{{ security_group }}"
+         instance_type: "{{ instance_type }}"
+         image: "{{ image }}"
+         wait: true
+         region: "{{ region }}"
+         vpc_subnet_id: subnet-2a16f067
+         count: 2
+         assign_public_ip: yes
+      register: ec2
+
+    # Add host to group "launched" we can use them later
+    - name: Add new instance to host group
+      add_host:
+        hostname: "{{ item.public_ip }}"
+        groupname: launched
+      with_items: "{{ ec2.instances }}"
+
+    - name: Wait for SSH to come up
+      delegate_to: "{{ item.public_dns_name }}"
+      wait_for_connection:
+        delay: 60
+        timeout: 180
+      with_items: "{{ ec2.instances }}"

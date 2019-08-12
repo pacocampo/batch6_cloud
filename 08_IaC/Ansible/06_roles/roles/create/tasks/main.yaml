@@ -1,0 +1,12 @@
+---
+- name: Launch instance
+  ec2:
+    key_name: "{{ keypair }}"
+    group: "{{ security_group }}"
+    instance_type: "{{ instance_type }}"
+    image: "{{ image }}"
+    wait: true
+    region: "{{ region }}"
+    vpc_subnet_id: subnet-2a16f067
+    assign_public_ip: yes
+  register: instance

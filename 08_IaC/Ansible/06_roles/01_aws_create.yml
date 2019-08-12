@@ -1,0 +1,9 @@
+- name: Create a sandbox instance
+  hosts: localhost
+  gather_facts: False
+  remote_user: ubuntu #By default ec2-user must be used to connect by SSH
+  roles:
+    - role: create
+    - role: ssh
+    - role: updateinstance
+
