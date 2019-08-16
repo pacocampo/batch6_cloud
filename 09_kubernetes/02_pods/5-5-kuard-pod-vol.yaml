@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-app
+spec:
+  volumes:
+    - name: "nginx-data"
+      hostPath:
+        path: "/var/lib/nginx"
+  containers:
+    - image: nginx
+      name: nginx
+      volumeMounts:
+        - mountPath: "/data"
+          name: "nginx-data"
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
