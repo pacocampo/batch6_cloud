@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appa
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: appa
+  template:
+    metadata:
+      labels:
+        app: appa
+        version: "2"
+    spec:
+      containers:
+      - image: gcr.io/batch-6-241502/appb
+        name: appa
+        ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP
