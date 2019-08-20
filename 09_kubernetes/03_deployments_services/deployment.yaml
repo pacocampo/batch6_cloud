@@ -17,7 +17,7 @@ spec:
       - image: nginx
         name: nginx-container
         ports:
-        - containerPort: 80
+        - containerPort:  
           name: http
           protocol: TCP
       - image: postgres:latest
