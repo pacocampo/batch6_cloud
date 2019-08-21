@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: 2017-12-27T18:38:34Z
+  name: app-a-configmap
+  namespace: default
+data:
+  color: purple
+  how: fairlyNice
+  textmode: "true"

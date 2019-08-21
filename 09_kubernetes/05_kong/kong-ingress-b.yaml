@@ -1,0 +1,13 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: app-b
+spec:
+  rules:
+  - host: app.b
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: appb
+          servicePort: 5000

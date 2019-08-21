@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appa
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: appa
+  template:
+    metadata:
+      labels:
+        app: appa
+        version: "2"
+    spec:
+      containers:
+      - image: gcr.io/batch-6-241502/appa
+        name: appa
+        ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP
+        env:
+          # Define the environment variable
+          - name: SPECIAL_LEVEL_KEY
+            valueFrom:
+              configMapKeyRef:
+                # The ConfigMap containing the value you want to assign to SPECIAL_LEVEL_KEY
+                name: app-a-configmap
+                # Specify the key associated with the value
+                key: color
+          - name: USERNAME
+            valueFrom:
+              secretKeyRef:
+                # The ConfigMap containing the value you want to assign to SPECIAL_LEVEL_KEY
+                name: app-a-secret
+                # Specify the key associated with the value
+                key: username
+          - name: PASSWORD
+            valueFrom:
+              secretKeyRef:
+                # The ConfigMap containing the value you want to assign to SPECIAL_LEVEL_KEY
+                name: app-a-secret
+                # Specify the key associated with the value
+                key: password
