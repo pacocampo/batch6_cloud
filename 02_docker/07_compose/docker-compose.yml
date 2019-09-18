@@ -1,0 +1,31 @@
+version: '3.2'
+
+services:
+  djangoapp:
+    build:
+      context: .
+      dockerfile: app/demo/Dockerfile
+    image: app
+    depends_on:
+      - db
+    volumes:
+      - ./src:/app
+    env_file:
+      - app/demo/.env-local
+    ports:
+      - "8000:8000"
+    restart: always
+    command: gunicorn demo.wsgi:application --bind 0.0.0.0:8000
+
+  db:
+    image: postgres
+    ports:
+      - "5432:5432"
+    restart: always
+
+  ws:
+    build:
+      context: .
+      dockerfile: webserver/Dockerfile
+    depends_on:
+      - djangoapp

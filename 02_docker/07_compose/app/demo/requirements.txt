@@ -1,0 +1,5 @@
+Django==2.1
+freeze==1.0.10
+gunicorn==19.9.0
+pytz==2019.1
+six==1.12.0
