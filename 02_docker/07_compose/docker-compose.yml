@@ -3,8 +3,8 @@ version: '3.2'
 services:
   djangoapp:
     build:
-      context: .
-      dockerfile: app/demo/Dockerfile
+      context: app/demo
+      dockerfile: Dockerfile
     image: app
     depends_on:
       - db
@@ -25,7 +25,9 @@ services:
 
   ws:
     build:
-      context: .
-      dockerfile: webserver/Dockerfile
+      context: webserver
+      dockerfile: Dockerfile
+    ports: 
+      - "80:80"
     depends_on:
       - djangoapp

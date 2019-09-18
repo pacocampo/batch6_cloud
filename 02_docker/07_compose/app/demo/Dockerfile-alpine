@@ -7,7 +7,7 @@ RUN \
 
 WORKDIR /usr/src/app
 
-COPY app/demo/requirements.txt .
+COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
