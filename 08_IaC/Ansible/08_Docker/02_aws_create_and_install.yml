@@ -1,0 +1,97 @@
+- name: Create a sandbox instance
+  hosts: localhost
+  remote_user: ec2-user #El usuario para conectarse por ssh, por default es ec2-user
+  gather_facts: false
+  vars:
+    keypair: bach7-key-pair #Nombre de los Key pair
+    instance_type: t2.micro
+    security_group: launch-wizard-1
+    image: ami-04b762b4289fba92b
+    region: us-west-2
+  tasks:
+    - name: Launch instance
+      ec2:
+         key_name: "{{ keypair }}"
+         group: "{{ security_group }}"
+         instance_type: "{{ instance_type }}"
+         image: "{{ image }}"
+         wait: true
+         region: "{{ region }}"
+         vpc_subnet_id: subnet-40a69c0b
+         assign_public_ip: yes
+         count: 1 #Número de instancias a crear
+      register: ec2
+
+    - name: Add new instance to host group
+      add_host: #Modulo para agrupar host
+        hostname: "{{ item.public_ip }}"
+        groupname: launched # nombre de grupo de instancias creadas
+      with_items: "{{ ec2.instances }}"
+
+    - name: Wait for SSH to come up
+      delegate_to: "{{ item.public_dns_name }}"
+      wait_for_connection:
+        delay: 60
+        timeout: 320
+      with_items: "{{ ec2.instances }}"
+
+#Install python & httpd
+- hosts: launched #nombre de grupo de instancias
+  become: true
+  connection: ssh
+  remote_user: ec2-user
+  gather_facts: false
+  tasks:
+  - name: Update all packages
+    yum:
+      name: '*'
+      state: latest
+      update_only: yes
+  - name: Ensure a list of yum packages are installed
+    yum:
+      name: "{{ packages }}"
+      state: latest
+      update_cache: yes
+    vars:
+      packages:
+      - python-pip
+      - yum-utils
+      - device-mapper-persistent-data
+      - lvm2
+      - amazon-linux-extras
+  - name: Add extras repository
+    shell: yum-config-manager --enable extras
+
+  - name: Install docker-ce (centos) via amazon-linux-extras packages
+    shell: "amazon-linux-extras install docker=18.06.1 -y"
+
+  - name: Enable Docker CE service at startup
+    service:
+      name: docker
+      state: started
+      enabled: yes
+  - name: Ensure Python pip packages are installed
+    pip:
+      name: "{{ packages }}"
+    vars:
+      packages:
+      - boto
+      - boto3
+      - docker-compose
+  - name: Ensure AWS CLI is available
+    pip:
+      name: awscli
+      state: present
+    register: cppflags
+  - name: Docker ecr login
+    shell: sudo $(aws ecr get-login --no-include-email --region us-west-2)
+    environment:
+      AWS_ACCESS_KEY_ID: <aws_access_key_id>
+      AWS_SECRET_ACCESS_KEY: <aws_secret_access_key>
+  - name: Docker pull
+    docker_container:
+      name: nginx_container
+      state: started
+      image: 336316616176.dkr.ecr.us-west-2.amazonaws.com/nginx:latest
+      ports:
+        - "80:80"
