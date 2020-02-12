@@ -14,7 +14,7 @@ chardet==3.0.4
 colorama==0.3.9
 configparser==3.5.0
 cryptography==2.3.1
-Django==1.11.20
+Django==1.11.28
 docutils==0.14
 enum34==1.1.6
 freeze==1.0.10
